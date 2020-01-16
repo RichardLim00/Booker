@@ -1,6 +1,6 @@
 <html lang="en">
 <?php
-    require_once './configuration/login.php';
+    require_once './configurations/login.php';
     $conn = new mysqli($hn, $un, $pw, $db);
     $conErrorMessage = "Connection to Database Failed!";
     if($conn->connect_error) die ($conErrorMessage);
@@ -19,53 +19,59 @@
 
 <body>
     <!--NavBar -->
-    <nav class="navbar navbar-expand-sm navbar-light bg-warning">
-        <a class="navbar-brand" href="index.php">Booker</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php">Home</a>
-                </li>
-                <li class="nav-item active">
-                    <a class="nav-link" href="list.php">List<span class="sr-only">(current)</span></a>
-                </li>
-            </ul>
-            <form class="form-inline my-2 my-lg-0" method="GET" action="bookInfo.php">
-                <input class="form-control mr-sm-2" type="search" placeholder="Book Name" aria-label="Search"
-                    name="bookName" autocomplete="off">
-                <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">Search</button>
-            </form>
-        </div>
-    </nav>
+    <?php include "./components/navbar.php"?>
 
     <!--Books List-->
     <?php       # Acquire All Books From Database
-        $query = "SELECT * FROM classics";
-        $result = $conn->query($query);
-        if(!$result) die("No Result!");
-
-        $records = $result->fetch_all(MYSQLI_ASSOC);
+        if(isset($_GET['bookName'])){
+            $statement = $conn->prepare("SELECT * FROM classics WHERE title = ?");
+            $statement->bind_param("s", $_GET['bookName']);
+            $statement->execute();
+            $result = $statement->get_result();
+            $title = "Search Result for '$_GET[bookName]";
+            
+            $records = $result->fetch_all(MYSQLI_ASSOC);
+        } else {   
+            $query = "SELECT * FROM classics LIMIT 10";
+            $result = $conn->query($query);
+            if(!$result) die("No Result!");
+            $title = "Book List";
+            
+            $records = $result->fetch_all(MYSQLI_ASSOC);
+        }
     ?>
-    <div class="container">
-        <table class="mx-auto" border="1">
-            <?php
-                foreach($records as $resultArray){
-                echo 
-                    "<tr>
-                        <td>$resultArray[isbn]</td>
-                        <td>$resultArray[title]</td>
-                        <td>$resultArray[author]</td>
-                        <td>$resultArray[year]</td>
-                    </tr>";
-                }
-            ?>
-        </table>
+    <?php if(count($records) != 0 ){ ?>
+    <div class="container mt-5">
+        <h1><?= $title  ?></h1>
+        <div class="table-responsive">
+            <table class="table mx-auto">
+                <thead class="thead-light">
+                    <tr>
+                        <th scope="col">ISBN</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Author</th>
+                        <th scope="col">Year</th>
+                    </tr>
+                </thead>
+                <?php   #Display all Books
+                    foreach($records as $resultArray){
+                    echo 
+                        "
+                            <tr>
+                                <td>$resultArray[isbn]</td>
+                                <td><a href='book.php?bookISBN=$resultArray[isbn]'>$resultArray[title]</a></td>
+                                <td>$resultArray[author]</td>
+                                <td>$resultArray[year]</td>
+                            </tr>
+                        ";
+                    }
+                ?>
+            </table>
+        </div>
     </div>
+    <?php } else { ?>
+    <h1 class="text-center mt-5">No Result!</h1>
+    <?php } ?>
 
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
         integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous">
