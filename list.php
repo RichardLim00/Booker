@@ -31,6 +31,14 @@
             $title = "Search Result for '$_GET[bookName]";
             
             $records = $result->fetch_all(MYSQLI_ASSOC);
+        } else if (isset($_GET['bookAuthor'])) {
+            $statement = $conn->prepare("SELECT * FROM classics WHERE author = ?");
+            $statement->bind_param("s", $_GET['bookAuthor']);
+            $statement->execute();
+            $result = $statement->get_result();
+            $title = "Search Result for '$_GET[bookAuthor]";
+            
+            $records = $result->fetch_all(MYSQLI_ASSOC);
         } else {   
             $query = "SELECT * FROM classics LIMIT 10";
             $result = $conn->query($query);
@@ -44,7 +52,7 @@
     <div class="container mt-5">
         <h1><?= $title  ?></h1>
         <div class="table-responsive">
-            <table class="table mx-auto">
+            <table class="table mx-auto ">
                 <thead class="thead-light">
                     <tr>
                         <th scope="col">ISBN</th>
@@ -60,7 +68,7 @@
                             <tr>
                                 <td>$resultArray[isbn]</td>
                                 <td><a href='book.php?bookISBN=$resultArray[isbn]'>$resultArray[title]</a></td>
-                                <td>$resultArray[author]</td>
+                                <td><a href='list.php?bookAuthor=$resultArray[author]'>$resultArray[author]</a></td>
                                 <td>$resultArray[year]</td>
                             </tr>
                         ";
@@ -70,7 +78,10 @@
         </div>
     </div>
     <?php } else { ?>
-    <h1 class="text-center mt-5">No Result!</h1>
+    <div class="container text-center">
+        <h1 class="text-center mt-5">No Result!</h1>
+        <a href="list.php">Back to List Page</a>
+    </div>
     <?php } ?>
 
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
